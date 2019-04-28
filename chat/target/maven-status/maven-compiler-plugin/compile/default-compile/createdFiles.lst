@@ -1,0 +1,7 @@
+com\slobo\master\controller\ChatController.class
+com\slobo\master\model\ChatMessage.class
+com\slobo\master\service\ChatBotService.class
+com\slobo\master\MasterApplication.class
+com\slobo\master\controller\WebSocketEventListener.class
+com\slobo\master\model\ChatMessage$MessageType.class
+com\slobo\master\config\WebSocketConfig.class
