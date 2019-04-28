@@ -83,8 +83,9 @@ public class MasterApplicationTests {
                 });
                 try {
                     // Step 3:  Simulate sending in a message from the client to the server
-                    ChatMessage myMessage = new ChatMessage("Hello Spring");
-                    session.send("/app/guestchat", myMessage);
+                    ChatMessage message = new ChatMessage();
+                    message.setContent("Hello Spring");
+                    session.send("/app/chat.sendMessage", message);
                 } catch (Throwable t) {
                     failure.set(t);
                     latch.countDown();
@@ -94,7 +95,7 @@ public class MasterApplicationTests {
 
         // Step 1:  Simulate a connection
         this.stompClient.connect(
-                "ws://localhost:{port}/landon-stomp-chat",
+                "ws://localhost:{port}/ws",
                 this.headers,
                 handler,
                 this.port);

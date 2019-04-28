@@ -38,9 +38,15 @@ public class ChatBotSessionHandler extends StompSessionHandlerAdapter {
         logger.info("Received : " + msg.getContent() + " from : " + msg.getSender());
     }
 
+    @Override
+    public void handleTransportError(StompSession session, Throwable ex) {
+        logger.error("Got an transport error", ex);
+    }
+
+
     private ChatMessage getJoinMessage() {
         ChatMessage msg = new ChatMessage();
-       // msg.setContent("bot connected");
+        // msg.setContent("bot connected");
         msg.setType(ChatMessage.MessageType.JOIN);
         msg.setSender("ChatBot");
         return msg;
