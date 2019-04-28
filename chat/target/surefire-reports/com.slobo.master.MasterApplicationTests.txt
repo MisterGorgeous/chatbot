@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.slobo.master.MasterApplicationTests
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.644 s - in com.slobo.master.MasterApplicationTests
