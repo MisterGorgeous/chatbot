@@ -19,11 +19,13 @@ public class ChatBotSessionHandler extends StompSessionHandlerAdapter {
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
         session.subscribe("/topic/public", this);
-        session.send("/app/chat.addUser", getJoinMessage());
+        session.send("/app/chat.addUser", new ChatMessage(ChatMessage.MessageType.CHAT,
+                "Hello.How can I help you?", ChatMessage.CHATBOT));
     }
 
     @Override
-    public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
+    public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload,
+                                Throwable exception) {
         logger.error("Got an exception", exception);
     }
 
@@ -43,13 +45,5 @@ public class ChatBotSessionHandler extends StompSessionHandlerAdapter {
         logger.error("Got an transport error", ex);
     }
 
-
-    private ChatMessage getJoinMessage() {
-        ChatMessage msg = new ChatMessage();
-        // msg.setContent("bot connected");
-        msg.setType(ChatMessage.MessageType.JOIN);
-        msg.setSender("ChatBot");
-        return msg;
-    }
 
 }
