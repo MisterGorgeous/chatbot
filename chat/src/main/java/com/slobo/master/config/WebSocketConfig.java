@@ -31,7 +31,8 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer
 {
     @Bean
-    public WebSocketStompClient webSocketStompClient() {
+    public WebSocketStompClient webSocketStompClient()
+    {
         WebSocketClient simpleWebSocketClient = new StandardWebSocketClient();
         List<Transport> transports = new ArrayList<>(1);
         transports.add(new WebSocketTransport(simpleWebSocketClient));
@@ -42,10 +43,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer
     }
 
     @Bean(name = "chatTasksExecutor")
-    public Executor chatTasksExecutor() {
+    public Executor chatTasksExecutor()
+    {
         return new ThreadPoolTaskExecutor();
     }
-
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry)
