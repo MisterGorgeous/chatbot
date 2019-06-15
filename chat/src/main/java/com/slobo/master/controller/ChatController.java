@@ -1,6 +1,5 @@
 package com.slobo.master.controller;
 
-import com.slobo.master.processor.UserPhrasePreProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -19,14 +18,12 @@ public class ChatController {
     @Qualifier("webChatBot")
     private ChatBot chatbot;
 
-    @Autowired
-    private UserPhrasePreProcessor userPhrasePreProcessor;
-
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
     public ChatMessage sendMessage(@Payload ChatMessage chatMessage) throws Exception {
         chatbot.respond(chatMessage);
-        userPhrasePreProcessor.process(chatMessage.getContent());
+    //    userPhrasePreProcessor.process(chatMessage.getContent());
+
         return chatMessage;
     }
 

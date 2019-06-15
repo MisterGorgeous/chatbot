@@ -1,44 +1,68 @@
 package com.slobo.master.processor;
 
-import cc.mallet.pipe.*;
-import cc.mallet.pipe.iterator.ArrayIterator;
-import cc.mallet.types.InstanceList;
-import org.springframework.stereotype.Component;
+import com.slobo.master.model.ProcessedUserMessage;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.neural.rnn.RNNCoreAnnotations;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.SentimentAnnotator;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.PropertiesUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.Properties;
 
-@Component
 public class UserPhrasePreProcessor {
 
-    public List<String> process(String phrase) {
+    private StanfordCoreNLP pipeline;
 
-        String stopListFilePath = "S:\\git_rep\\master\\chat\\src\\main\\resources\\data\\en.txt";
+    public UserPhrasePreProcessor() {
+        Properties props = PropertiesUtils.asProperties(
+                "annotators", "tokenize, ssplit, pos, lemma, ner, parse, sentiment",
+                "ssplit.isOneSentence", "true",
+                "tokenize.language", "en");
 
-        ArrayList<Pipe> pipeList = new ArrayList<>();
-        pipeList.add(new Input2CharSequence("UTF-8"));
-        Pattern tokenPattern = Pattern.compile("[\\p{L}\\p{N}_]+");
-        pipeList.add(new CharSequence2TokenSequence(tokenPattern));
-        pipeList.add(new TokenSequenceLowercase());
-        pipeList.add(new TokenSequenceRemoveStopwords(new File(stopListFilePath), "utf-8", false, false, false));
-        pipeList.add(new TokenSequence2FeatureSequence());
-        pipeList.add(new Target2Label());
-        pipeList.add(new PrintInputAndTarget());
-        SerialPipes pipeline = new SerialPipes(pipeList);
+        pipeline = new StanfordCoreNLP(props);
 
-
-        // Construct a new instance list, passing it the pipe
-        //  we want to use to process instances.
-        InstanceList instances = new InstanceList(pipeline);
-
-        String[] data = new String[]{"Gallery unveils interactive tree A Christmas tree that can receive text messages has been unveiled at London's Tate Britain art gallery."};
-        // Now process each instance provided by the iterator.
-        instances.addThruPipe(new ArrayIterator(data));
-
-        return Arrays.asList(data);
 
     }
+
+    public ProcessedUserMessage process(String data) {
+        if (StringUtils.isBlank(data)) {
+            return null;
+        }
+
+        Annotation document = new Annotation(data);
+        pipeline.annotate(document);
+
+        Map<String, Integer> posStatistics = new HashMap<>();
+        StringBuilder lemmatizatedMessage = new StringBuilder();
+        int sentimentScore = 0;
+
+        List<CoreMap> sentences = document.get(CoreAnnotations.SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+
+            Tree tree = sentence.get(SentimentCoreAnnotations.SentimentAnnotatedTree.class);
+            sentimentScore = RNNCoreAnnotations.getPredictedClass(tree) + sentimentScore;
+
+            for (CoreLabel token : sentence.get(CoreAnnotations.TokensAnnotation.class)) {
+
+                String lemma = token.get(CoreAnnotations.LemmaAnnotation.class);
+                lemmatizatedMessage.append(lemma).append(" ");
+
+                String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+                posStatistics.merge(pos, 1, (currentValue, newValue) -> currentValue + newValue);
+
+            }
+        }
+
+        return new ProcessedUserMessage(lemmatizatedMessage.toString(), posStatistics, sentimentScore);
+    }
+
 }

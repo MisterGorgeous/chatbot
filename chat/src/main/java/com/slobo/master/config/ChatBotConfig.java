@@ -25,9 +25,4 @@ public class ChatBotConfig {
         return factory.create(ChatterBotType.PANDORABOTS, "b0dafd24ee35a477");
     }
 
-    @Bean
-    public TopicInferencer topicInferencer() {
-        return new TopicInferencer(null, null, null, null, 0, 0);
-    }
-
 }
