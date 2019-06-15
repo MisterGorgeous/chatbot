@@ -1,7 +1,8 @@
 package com.slobo.master.controller;
 
+import com.slobo.master.model.ChatMessage;
+import com.slobo.master.processor.ResponseProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -9,21 +10,17 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
-import com.slobo.master.model.ChatMessage;
-import com.slobo.master.service.ChatBot;
-
 @Controller
 public class ChatController {
+
     @Autowired
-    @Qualifier("webChatBot")
-    private ChatBot chatbot;
+    private ResponseProcessor responseProcessor;
+
 
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
     public ChatMessage sendMessage(@Payload ChatMessage chatMessage) throws Exception {
-        chatbot.respond(chatMessage);
-    //    userPhrasePreProcessor.process(chatMessage.getContent());
-
+        responseProcessor.respond(chatMessage);
         return chatMessage;
     }
 
@@ -31,11 +28,6 @@ public class ChatController {
     @SendTo("/topic/public")
     public ChatMessage addUser(@Payload ChatMessage chatMessage,
                                SimpMessageHeaderAccessor headerAccessor) throws Exception {
-        if (!chatbot.isChatBotConnected()) {
-            chatbot.connect();
-            chatbot.connectToChatBotServer();
-        }
-
         headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
         return chatMessage;
     }

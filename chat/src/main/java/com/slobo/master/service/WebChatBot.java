@@ -13,8 +13,7 @@ import com.google.code.chatterbotapi.ChatterBotSession;
 import com.slobo.master.model.ChatMessage;
 
 @Component("webChatBot")
-public class WebChatBot implements ChatBot
-{
+public class WebChatBot implements ChatBot {
     private Logger logger = LogManager.getLogger(WebChatBot.class);
     @Autowired
     @Qualifier("pandorabotsChatterBot")
@@ -29,33 +28,31 @@ public class WebChatBot implements ChatBot
     private static String URL = "ws://localhost:8081/websocket";
 
     @Override
-    public void respond(ChatMessage chatMessage) throws Exception
-    {
+    public String respond(ChatMessage chatMessage) throws Exception {
         String response = session.think(chatMessage.getContent());
 
         logger.info("WebChatBot respond" + response);
 
         stompSession.send("/topic/public",
                 new ChatMessage(ChatMessage.MessageType.CHAT, response, ChatMessage.CHATBOT));
+
+        return response;
     }
 
     @Override
-    public boolean isChatBotConnected() throws Exception
-    {
+    public boolean isChatBotConnected() throws Exception {
         return isChatBotConnected;
     }
 
     @Override
-    public void connect() throws Exception
-    {
+    public void connect() throws Exception {
         logger.info("WebChatBot connected to chatBot");
         stompSession = stompClient.connect(URL, sessionHandler).get();
         isChatBotConnected = true;
     }
 
     @Override
-    public void connectToChatBotServer() throws Exception
-    {
+    public void connectToChatBotServer() throws Exception {
         logger.info("WebChatBot connected to chatBot server");
         session = chatterBot.createSession();
         isChatBotConnected = true;

@@ -1,8 +1,14 @@
 package com.slobo.master.model;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.Map;
 
+@Document
 public class ProcessedUserMessage {
+    @Id
+    private Integer id;
     private String message;
     private String responseOnTheMessage;
     private Map<String, Integer> posStatistics;

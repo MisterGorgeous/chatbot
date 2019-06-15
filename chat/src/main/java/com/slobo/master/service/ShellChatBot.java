@@ -1,30 +1,26 @@
 package com.slobo.master.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.concurrent.ExecutionException;
-
-import javax.annotation.PreDestroy;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
-import org.springframework.web.socket.messaging.WebSocketStompClient;
-
 import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.slobo.master.model.ChatMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+
+import javax.annotation.PreDestroy;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.concurrent.ExecutionException;
 
 @Component("shellChatBot")
-public class ShellChatBot implements ChatBot
-{
+public class ShellChatBot implements ChatBot {
     private Logger logger = LogManager.getLogger(ShellChatBot.class);
     @Autowired
     private ChatBotSessionHandler sessionHandler;
@@ -44,32 +40,27 @@ public class ShellChatBot implements ChatBot
     private String lsCommand = "ls";
     private String startChatBotCommand = "java -jar cb_virtDialog.jar";
 
-    public void connect() throws ExecutionException, InterruptedException
-    {
+    public void connect() throws ExecutionException, InterruptedException {
         stompSession = stompClient.connect(URL, sessionHandler).get();
         chatBotConnected = true;
     }
 
     @Async("chatTasksExecutor")
-    public void respond(ChatMessage chatMessage) throws IOException, JSchException
-    {
-        if (chatBotConnected && chatBotStarted)
-        {
-            String chatbotAnswer = executeCommand("Enter your response or query > " + chatMessage.getContent());
+    public String respond(ChatMessage chatMessage) throws IOException, JSchException {
+        String chatbotAnswer = "Sorry. I am not ready to answer.";
+        if (chatBotConnected && chatBotStarted) {
+            chatbotAnswer = executeCommand("Enter your response or query > " + chatMessage.getContent());
             stompSession.send("/topic/public",
                     new ChatMessage(ChatMessage.MessageType.CHAT, chatbotAnswer, ChatMessage.CHATBOT));
-        }
-        else
-        {
+        } else {
             logger.info("ChatBot can't produce an answer.");
             stompSession.send("/chat.sendMessage",
-                    new ChatMessage(ChatMessage.MessageType.CHAT, "Sorry. I am not ready to answer.",
-                            ChatMessage.CHATBOT));
+                    new ChatMessage(ChatMessage.MessageType.CHAT, chatbotAnswer, ChatMessage.CHATBOT));
         }
+        return chatbotAnswer;
     }
 
-    public void connectToChatBotServer() throws JSchException, IOException
-    {
+    public void connectToChatBotServer() throws JSchException, IOException {
         logger.info("Connect to 138.68.237.229");
 
         java.util.Properties config = new java.util.Properties();
@@ -105,10 +96,8 @@ public class ShellChatBot implements ChatBot
         chatBotStarted = true;
     }
 
-    public String executeCommand(String command) throws JSchException, IOException
-    {
-        if (session == null || channel == null)
-        {
+    public String executeCommand(String command) throws JSchException, IOException {
+        if (session == null || channel == null) {
             throw new IllegalStateException("Couldn't execute command." + command);
         }
 
@@ -124,14 +113,11 @@ public class ShellChatBot implements ChatBot
         byte[] tmp = new byte[1024];
         String line = "";
         int breakCounter = 0;
-        while (true)
-        {
+        while (true) {
             System.out.println("exit-status: ");
-            while (in.available() > 0)
-            {
+            while (in.available() > 0) {
                 int i = in.read(tmp, 0, 1024);
-                if (i < 0)
-                {
+                if (i < 0) {
                     break;
                 }
                 line = new String(tmp, 0, i);
@@ -139,28 +125,22 @@ public class ShellChatBot implements ChatBot
                 result.append(line);
             }
 
-            if (breakCounter > 10)
-            {
+            if (breakCounter > 10) {
                 break;
             }
 
-            if (line.contains("logout"))
-            {
+            if (line.contains("logout")) {
                 break;
             }
 
-            if (channel.isClosed())
-            {
+            if (channel.isClosed()) {
                 System.out.println("exit-status: " + channel.getExitStatus());
                 break;
             }
-            try
-            {
+            try {
                 Thread.sleep(1000);
                 breakCounter++;
-            }
-            catch (Exception ee)
-            {
+            } catch (Exception ee) {
             }
         }
 
@@ -169,35 +149,28 @@ public class ShellChatBot implements ChatBot
         return result.toString();
     }
 
-    public boolean isChatBotConnected()
-    {
+    public boolean isChatBotConnected() {
         return chatBotConnected;
     }
 
-    public void setChatBotConnected(boolean chatBotConnected)
-    {
+    public void setChatBotConnected(boolean chatBotConnected) {
         this.chatBotConnected = chatBotConnected;
     }
 
-    public StompSession getStompSession()
-    {
+    public StompSession getStompSession() {
         return stompSession;
     }
 
-    public void setStompSession(StompSession stompSession)
-    {
+    public void setStompSession(StompSession stompSession) {
         this.stompSession = stompSession;
     }
 
     @PreDestroy
-    public void finishUp()
-    {
-        if (channel != null)
-        {
+    public void finishUp() {
+        if (channel != null) {
             channel.disconnect();
         }
-        if (session != null)
-        {
+        if (session != null) {
             session.disconnect();
         }
     }
