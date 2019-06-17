@@ -21,7 +21,7 @@ public class ResponseProcessor {
 
         String chatBotResponse = respondChatBot(chatMessage);
 
-        cacheMessageProcessor.saveMessage();
+        //cacheMessageProcessor.saveMessage();
     }
 
     private String respondChatBot(ChatMessage chatMessage) throws Exception {

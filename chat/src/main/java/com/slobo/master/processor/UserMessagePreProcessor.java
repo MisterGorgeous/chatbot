@@ -9,23 +9,29 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.PropertiesUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@Component
 public class UserMessagePreProcessor {
 
-    @Value("${processor.sentiment.distance}")
-    private int sentimentDistance;
-    @Autowired
+
     private StanfordCoreNLP pipeline;
+
+    public UserMessagePreProcessor() {
+        Properties props = PropertiesUtils.asProperties(
+                "annotators", "tokenize, ssplit, pos, lemma, ner, parse, sentiment",
+                "ssplit.isOneSentence", "true",
+                "tokenize.language", "en");
+
+        this.pipeline = new StanfordCoreNLP(props);
+    }
 
     public ProcessedUserMessage process(String data) {
         if (StringUtils.isBlank(data)) {
@@ -60,7 +66,7 @@ public class UserMessagePreProcessor {
     }
 
     public Predicate<? super ProcessedUserMessage> bySentimentDistance(ProcessedUserMessage currentMessage) {
-        return message -> Math.hypot(currentMessage.getSentimentScore(), message.getSentimentScore()) < sentimentDistance;
+        return message -> Math.abs(currentMessage.getSentimentScore()) - Math.abs(message.getSentimentScore()) < 3;
     }
 
     public Predicate<? super ProcessedUserMessage> byPOSDistance(ProcessedUserMessage currentMessage) {
@@ -68,8 +74,14 @@ public class UserMessagePreProcessor {
             Map<String, Integer> savedMessagePosStatistics = message.getPosStatistics();
             Map<String, Integer> currentMessagePosStatistics = currentMessage.getPosStatistics();
 
+            double border = Stream
+                    .of(savedMessagePosStatistics.values().stream(), currentMessagePosStatistics.values().stream())
+                    .flatMap(i -> i)
+                    .reduce(Integer::sum)
+                    .orElse(0);
+
             for (Map.Entry<String, Integer> currentEntry : currentMessagePosStatistics.entrySet()) {
-                savedMessagePosStatistics.merge(currentEntry.getKey(), currentEntry.getValue(), Integer::sum);
+                savedMessagePosStatistics.merge(currentEntry.getKey(), currentEntry.getValue(), (f, s) -> Math.abs(f - s));
             }
 
             Integer distance = savedMessagePosStatistics.entrySet().stream()
@@ -85,8 +97,8 @@ public class UserMessagePreProcessor {
                     })
                     .orElseThrow(IllegalStateException::new).getValue();
 
-            double border = Math.sqrt(currentMessage.getMessage().length());
-            return distance < border;
+
+            return distance < border / 2;
         };
     }
 
@@ -95,8 +107,18 @@ public class UserMessagePreProcessor {
                 Collectors.toList(),
                 list -> {
                     String message = currentMessage.getMessage();
-                    list.sort(Comparator.comparingInt(f -> calculateLevenshteinDistance(f.getMessage(), message)));
-                    return list.get(0);
+                    ImmutablePair<ProcessedUserMessage, Integer> pair =
+                            list
+                                    .stream()
+                                    .map(m -> new ImmutablePair<>(m, calculateLevenshteinDistance(m.getMessage(), message)))
+                                    .min(Comparator.comparingInt(p -> p.right))
+                                    .orElse(new ImmutablePair<>(currentMessage, -1));
+
+                    int currentMessageLenght = currentMessage.getMessage().length();
+                    int resultMessageLength = pair.getKey().getMessage().length();
+
+                    double border = currentMessageLenght > resultMessageLength ? Math.sqrt(currentMessageLenght * 2) : Math.sqrt(resultMessageLength * 2);
+                    return pair.right != -1 && pair.right < border ? pair.left : currentMessage;
                 }
         );
     }
@@ -118,7 +140,8 @@ public class UserMessagePreProcessor {
             }
         }
 
-        return dp[x.length()][y.length()];
+        int result = dp[x.length()][y.length()];
+        return result;
     }
 
     private int costOfSubstitution(char a, char b) {

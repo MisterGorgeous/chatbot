@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 public class CacheMessageProcessor {
 
 
-    @Autowired
+    // @Autowired
     private UserMessagePreProcessor userMessagePreProcessor;
     @Autowired
     private UserMessageRepository userMessageRepository;
@@ -23,12 +23,12 @@ public class CacheMessageProcessor {
 
         List<ProcessedUserMessage> savedMessages = userMessageRepository.findAll();
 
-        savedMessages.stream()
+        ProcessedUserMessage result = savedMessages.stream()
                 .filter(userMessagePreProcessor.bySentimentDistance(currentMessage))
                 .filter(userMessagePreProcessor.byPOSDistance(currentMessage))
                 .collect(userMessagePreProcessor.toMessage(currentMessage));
 
-
+        return result;
     }
 
 
