@@ -20,39 +20,21 @@ public class WebChatBot implements ChatBot {
     private ChatterBot chatterBot;
     private ChatterBotSession session;
     private boolean isChatBotConnected;
-    private StompSession stompSession;
-    @Autowired
-    private WebSocketStompClient stompClient;
-    @Autowired
-    private ChatBotSessionHandler sessionHandler;
-    private static String URL = "ws://localhost:8081/websocket";
 
     @Override
     public String respond(ChatMessage chatMessage) throws Exception {
         String response = session.think(chatMessage.getContent());
-
         logger.info("WebChatBot respond" + response);
-
-        stompSession.send("/topic/public",
-                new ChatMessage(ChatMessage.MessageType.CHAT, response, ChatMessage.CHATBOT));
-
         return response;
     }
 
     @Override
-    public boolean isChatBotConnected() throws Exception {
+    public boolean isChatBotConnected() {
         return isChatBotConnected;
     }
 
     @Override
-    public void connect() throws Exception {
-        logger.info("WebChatBot connected to chatBot");
-        stompSession = stompClient.connect(URL, sessionHandler).get();
-        isChatBotConnected = true;
-    }
-
-    @Override
-    public void connectToChatBotServer() throws Exception {
+    public void connectToChatBotServer() {
         logger.info("WebChatBot connected to chatBot server");
         session = chatterBot.createSession();
         isChatBotConnected = true;

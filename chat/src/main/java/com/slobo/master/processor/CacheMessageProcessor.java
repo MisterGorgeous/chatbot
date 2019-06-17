@@ -3,17 +3,14 @@ package com.slobo.master.processor;
 import com.slobo.master.model.ProcessedUserMessage;
 import com.slobo.master.repository.UserMessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 @Component
 public class CacheMessageProcessor {
 
-
-    // @Autowired
+    @Autowired
     private UserMessagePreProcessor userMessagePreProcessor;
     @Autowired
     private UserMessageRepository userMessageRepository;
@@ -23,13 +20,13 @@ public class CacheMessageProcessor {
 
         List<ProcessedUserMessage> savedMessages = userMessageRepository.findAll();
 
-        ProcessedUserMessage result = savedMessages.stream()
+        return savedMessages.stream()
                 .filter(userMessagePreProcessor.bySentimentDistance(currentMessage))
                 .filter(userMessagePreProcessor.byPOSDistance(currentMessage))
                 .collect(userMessagePreProcessor.toMessage(currentMessage));
-
-        return result;
     }
 
-
+    public void saveMessage(ProcessedUserMessage message) {
+        userMessageRepository.save(message);
+    }
 }

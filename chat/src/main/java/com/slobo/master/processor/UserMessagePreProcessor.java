@@ -12,6 +12,9 @@ import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.PropertiesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -19,19 +22,14 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Component
 public class UserMessagePreProcessor {
 
 
+    @Value("${processor.sentiment.distance}")
+    private int sentimentDistance;
+    @Autowired
     private StanfordCoreNLP pipeline;
-
-    public UserMessagePreProcessor() {
-        Properties props = PropertiesUtils.asProperties(
-                "annotators", "tokenize, ssplit, pos, lemma, ner, parse, sentiment",
-                "ssplit.isOneSentence", "true",
-                "tokenize.language", "en");
-
-        this.pipeline = new StanfordCoreNLP(props);
-    }
 
     public ProcessedUserMessage process(String data) {
         if (StringUtils.isBlank(data)) {

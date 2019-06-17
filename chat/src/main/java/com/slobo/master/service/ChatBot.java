@@ -8,7 +8,5 @@ public interface ChatBot
 
     boolean isChatBotConnected() throws Exception;
 
-    void connect() throws Exception;
-
     void connectToChatBotServer() throws Exception;
 }
